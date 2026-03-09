@@ -106,10 +106,3 @@ pub use utils::{AllMetricsResult, calculate_all_metrics};
 pub use weighted_f_measure::{
     WeightedFMeasureMetric, WeightedFMeasureMetricConfig, calculate_weighted_f_measure,
 };
-
-#[cfg(test)]
-mod tests {
-    use burn::backend::Cpu;
-
-    pub type TestBackend = Cpu;
-}

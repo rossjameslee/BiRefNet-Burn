@@ -28,7 +28,7 @@ pub struct MAEMetricConfig {
 #[derive(Clone)]
 pub struct MAEMetric<B: Backend> {
     state: NumericMetricState,
-    apply_sigmoid: bool,
+    _apply_sigmoid: bool,
     name: Arc<String>,
     _b: PhantomData<B>,
 }
@@ -37,7 +37,7 @@ impl MAEMetricConfig {
     pub fn init<B: Backend>(&self) -> MAEMetric<B> {
         MAEMetric {
             state: NumericMetricState::default(),
-            apply_sigmoid: self.apply_sigmoid,
+            _apply_sigmoid: self.apply_sigmoid,
             name: Arc::new("MAE".to_owned()),
             _b: PhantomData,
         }

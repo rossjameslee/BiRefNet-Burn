@@ -108,7 +108,6 @@ impl<B: Backend> Batcher<B, BiRefNetItem, BiRefNetBatch<B>> for BiRefNetBatcher<
 pub struct BiRefNetDataset {
     items: Vec<(PathBuf, PathBuf)>,
     is_train: bool,
-    target_size: (u32, u32),
     augmentor: ImageAugmentor,
 }
 
@@ -127,9 +126,6 @@ impl BiRefNetDataset {
         let items = Self::collect_dataset_items(config, split)?;
         let is_train = split == "train";
 
-        // Use fixed target size for image preprocessing
-        let target_size = (1024, 1024);
-
         // Create default reinforcement settings
         let augmentation_config = AugmentationConfig::default();
         let augmentor = ImageAugmentor::new(augmentation_config);
@@ -137,7 +133,6 @@ impl BiRefNetDataset {
         Ok(Self {
             items,
             is_train,
-            target_size,
             augmentor,
         })
     }
@@ -160,13 +155,11 @@ impl BiRefNetDataset {
     ) -> DatasetResult<Self> {
         let items = Self::collect_dataset_items(config, split)?;
         let is_train = split == "train";
-        let target_size = augmentation_config.target_size;
         let augmentor = ImageAugmentor::new(augmentation_config);
 
         Ok(Self {
             items,
             is_train,
-            target_size,
             augmentor,
         })
     }
