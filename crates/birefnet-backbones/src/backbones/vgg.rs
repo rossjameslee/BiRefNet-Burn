@@ -229,6 +229,7 @@ impl<B: Backend> VGGFeatureBlock<B> {
 }
 
 /// Individual layer types in VGG feature blocks.
+#[allow(clippy::large_enum_variant)]
 #[derive(Module, Debug)]
 pub enum VGGBlockLayer<B: Backend> {
     /// Convolution layer with optional batch normalization.

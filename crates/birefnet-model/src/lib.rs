@@ -44,9 +44,12 @@ pub use training::{BiRefNetBatch, BiRefNetOutput};
 
 #[cfg(test)]
 mod tests {
-    use burn::backend::{Autodiff, Cpu};
+    #[cfg(feature = "train")]
+    use burn::backend::Autodiff;
+    use burn::backend::NdArray;
 
-    pub type TestBackend = Cpu;
+    pub type TestBackend = NdArray;
 
+    #[cfg(feature = "train")]
     pub type TestAutodiffBackend = Autodiff<TestBackend>;
 }

@@ -12,6 +12,7 @@ use burn::{
     prelude::*,
 };
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Module, Debug)]
 pub enum ResidualBlock<B: Backend> {
     /// A bottleneck residual block.

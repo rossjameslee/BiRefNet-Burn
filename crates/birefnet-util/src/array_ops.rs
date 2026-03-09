@@ -7,7 +7,7 @@ use burn::tensor::{ElementConversion, Tensor, backend::Backend, s};
 
 /// Compute histogram of tensor values
 ///
-/// # Arguments  
+/// # Arguments
 /// * `tensor` - Input tensor of any dimension
 /// * `bins` - Number of histogram bins
 /// * `range` - Value range as (min, max) tuple. If None, uses tensor min/max
@@ -59,7 +59,7 @@ pub fn histogram<B: Backend, const D: usize>(
 /// # Arguments
 /// * `tensor` - Input 1D tensor
 ///
-/// # Returns  
+/// # Returns
 /// 1D tensor with cumulative sums
 pub fn cumsum_1d<B: Backend>(tensor: Tensor<B, 1>) -> Tensor<B, 1> {
     let [size] = tensor.dims();
@@ -86,7 +86,7 @@ pub fn cumsum_1d<B: Backend>(tensor: Tensor<B, 1>) -> Tensor<B, 1> {
 /// # Arguments
 /// * `tensor` - Input 2D tensor
 ///
-/// # Returns  
+/// # Returns
 /// 2D tensor with cumulative sums along axis 0
 pub fn cumsum_2d_axis0<B: Backend>(tensor: Tensor<B, 2>) -> Tensor<B, 2> {
     let [rows, _cols] = tensor.dims();
@@ -157,16 +157,16 @@ pub fn count_nonzero<B: Backend, const D: usize>(tensor: Tensor<B, D>) -> f64 {
 /// Vector of indices where tensor is non-zero
 pub fn argwhere<B: Backend, const D: usize>(tensor: Tensor<B, D>) -> Vec<[usize; D]> {
     let zero = Tensor::zeros_like(&tensor);
-    let mask = tensor.not_equal(zero);
+    let mask = tensor.not_equal(zero).float();
     let data = mask.into_data();
     let shape = data.shape.clone();
-    let values = data.as_slice::<bool>().unwrap();
+    let values = data.as_slice::<f32>().unwrap();
 
     let mut indices = Vec::new();
 
     // Convert flat index to multi-dimensional indices
-    for (flat_idx, &is_nonzero) in values.iter().enumerate() {
-        if is_nonzero {
+    for (flat_idx, &value) in values.iter().enumerate() {
+        if value > 0.0 {
             let mut coords = [0; D];
             let mut remaining = flat_idx;
 
@@ -572,7 +572,7 @@ mod tests {
     #[rstest]
     #[case("ones", 5, 0, 0.0)] // constant values, any ddof
     #[case("ones", 5, 1, 0.0)] // constant values, any ddof
-    #[case("range", 5, 0, 1.4142135623730951)] // population std of [0,1,2,3,4]
+    #[case("range", 5, 0, std::f64::consts::SQRT_2)] // population std of [0,1,2,3,4]
     #[case("range", 5, 1, 1.5811388300841898)] // sample std of [0,1,2,3,4] (adjusted)
     fn std_with_ddof_computes_correctly(
         #[case] pattern: &str,

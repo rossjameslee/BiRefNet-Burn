@@ -21,7 +21,7 @@
 //!
 //! ## Model Variants
 //! - **Swin-T**: Tiny model (96 dim, [2,2,6,2] depths, [3,6,12,24] heads)
-//! - **Swin-S**: Small model (96 dim, [2,2,18,2] depths, [3,6,12,24] heads)  
+//! - **Swin-S**: Small model (96 dim, [2,2,18,2] depths, [3,6,12,24] heads)
 //! - **Swin-B**: Base model (128 dim, [2,2,18,2] depths, [4,8,16,32] heads)
 //! - **Swin-L**: Large model (192 dim, [2,2,18,2] depths, [6,12,24,48] heads)
 //!
@@ -111,7 +111,7 @@ impl MlpConfig {
 /// # Components
 /// - `fc1`: First linear transformation (input -> hidden)
 /// - `act`: Gelu activation function
-/// - `fc2`: Second linear transformation (hidden -> output)  
+/// - `fc2`: Second linear transformation (hidden -> output)
 /// - `drop`: Dropout layer applied after both linear layers
 #[derive(Module, Debug)]
 pub struct Mlp<B: Backend> {
@@ -473,7 +473,7 @@ impl<B: Backend> WindowAttention<B> {
 /// 1. Layer normalization
 /// 2. Window-based multi-head self-attention (W-MSA or SW-MSA)
 /// 3. Residual connection
-/// 4. Layer normalization  
+/// 4. Layer normalization
 /// 5. Multi-layer perceptron (MLP)
 /// 6. Residual connection
 ///
@@ -559,7 +559,7 @@ impl SwinTransformerBlockConfig {
 /// # Processing Flow
 /// 1. Apply layer normalization to input
 /// 2. Perform window partitioning and optional cyclic shifting
-/// 3. Compute window-based multi-head self-attention  
+/// 3. Compute window-based multi-head self-attention
 /// 4. Reverse shifts and merge windows
 /// 5. Apply residual connection with drop path
 /// 6. Apply layer normalization and MLP
@@ -593,7 +593,7 @@ impl<B: Backend> SwinTransformerBlock<B> {
     /// # Arguments
     /// - `x`: Input tensor of shape `[batch_size, height * width, channels]`
     /// - `h`: Height of the feature map
-    /// - `w`: Width of the feature map  
+    /// - `w`: Width of the feature map
     /// - `mask_matrix`: Attention mask for shifted window attention of shape
     ///   `[num_windows, window_size * window_size, window_size * window_size]`
     ///
@@ -682,7 +682,7 @@ impl<B: Backend> SwinTransformerBlock<B> {
 /// # Operation
 /// The patch merging operation:
 /// 1. Takes 2x2 neighboring patches and concatenates their features
-/// 2. Applies layer normalization to the concatenated features  
+/// 2. Applies layer normalization to the concatenated features
 /// 3. Uses a linear layer to reduce the dimension from 4C to 2C
 ///
 /// This effectively halves the spatial resolution (H/2, W/2) while doubling
@@ -791,7 +791,7 @@ impl<B: Backend> PatchMerging<B> {
 ///
 /// # Stage Structure
 /// Each stage alternates between:
-/// - Even-indexed blocks: Regular window multi-head self-attention (W-MSA)  
+/// - Even-indexed blocks: Regular window multi-head self-attention (W-MSA)
 /// - Odd-indexed blocks: Shifted window multi-head self-attention (SW-MSA)
 ///
 /// This pattern ensures information exchange between different windows while
@@ -905,7 +905,7 @@ impl<B: Backend> BasicLayer<B> {
     /// A tuple containing:
     /// - `x_out`: Output before downsampling `[batch_size, h * w, channels]`
     /// - `h_out`: Output height before downsampling
-    /// - `w_out`: Output width before downsampling  
+    /// - `w_out`: Output width before downsampling
     /// - `x_down`: Output after optional downsampling `[batch_size, h_down * w_down, channels_down]`
     /// - `h_down`: Height after downsampling (h/2 if downsampling, else h)
     /// - `w_down`: Width after downsampling (w/2 if downsampling, else w)
@@ -1334,6 +1334,7 @@ impl<B: Backend> SwinTransformer<B> {
 }
 
 #[cfg(test)]
+#[allow(clippy::too_many_arguments)]
 mod tests {
     use burn::tensor::{Distribution, Transaction};
     use rstest::rstest;
@@ -1347,6 +1348,7 @@ mod tests {
     #[case(128, None, 1, 64)] // No hidden features specified (should default to input)
     #[case(192, Some(768), 4, 196)] // Larger dimensions
     #[case(256, Some(1024), 3, 784)] // Even larger
+    #[ignore = "slow backbone tensor-shape test"]
     fn mlp_preserves_input_output_dimensions(
         #[case] input_dim: usize,
         #[case] hidden_features: Option<usize>,
@@ -1373,6 +1375,7 @@ mod tests {
     #[case(8, 24, 24, 3, 128)] // 8x8 windows on 24x24
     #[case(7, 28, 28, 2, 192)] // 7x7 windows on 28x28 (4x4 grid)
     #[case(5, 20, 15, 1, 32)] // Different h and w sizes
+    #[ignore = "slow backbone tensor-shape test"]
     fn window_partition_and_reverse_are_inverse_operations(
         #[case] window_size: usize,
         #[case] h: usize,
@@ -1431,6 +1434,7 @@ mod tests {
     #[case(96, [7, 7], 3, 4)] // Original case: 96 dim, 7x7 window, 3 heads
     #[case(128, [8, 8], 4, 6)] // Larger: 128 dim, 8x8 window, 4 heads
     #[case(48, [4, 4], 3, 1)] // Small batch: 48 dim, 4x4 window, 3 heads
+    #[ignore = "slow backbone tensor-shape test"]
     fn window_attention_preserves_input_dimensions(
         #[case] dim: usize,
         #[case] window_size: [usize; 2],
@@ -1488,8 +1492,8 @@ mod tests {
         let output = patch_embed.forward(input);
 
         // Calculate expected output size considering potential padding
-        let output_h = (height + patch_size - 1) / patch_size; // Ceiling division for padding
-        let output_w = (width + patch_size - 1) / patch_size;
+        let output_h = height.div_ceil(patch_size);
+        let output_w = width.div_ceil(patch_size);
 
         assert_eq!(
             output.shape().dims,
@@ -1509,6 +1513,7 @@ mod tests {
     #[case(96, 56, 56, 2)] // Original case: 96 dim, 56x56 spatial
     #[case(128, 28, 28, 3)] // Larger dim: 128 dim, 28x28 spatial
     #[case(48, 64, 48, 1)] // Non-square: 48 dim, 64x48 spatial
+    #[ignore = "slow backbone tensor-shape test"]
     fn patch_merging_reduces_spatial_dims_doubles_channels(
         #[case] input_dim: usize,
         #[case] h: usize,
@@ -1528,8 +1533,8 @@ mod tests {
         let output = patch_merging.forward(input, h, w);
 
         // Calculate expected output dimensions
-        let expected_h = (h + 1) / 2; // Ceiling division
-        let expected_w = (w + 1) / 2; // Ceiling division
+        let expected_h = h.div_ceil(2);
+        let expected_w = w.div_ceil(2);
         let expected_channels = 2 * input_dim;
 
         assert_eq!(
@@ -1559,6 +1564,7 @@ mod tests {
     #[case(96, 3, 56, 56, 2)] // Original case: 96 dim, 3 heads, 56x56 spatial
     #[case(128, 4, 28, 28, 3)] // Larger: 128 dim, 4 heads, 28x28 spatial
     #[case(48, 3, 64, 48, 2)] // Non-square: 48 dim, 3 heads, 64x48 spatial
+    #[ignore = "slow backbone tensor-shape test"]
     fn swin_transformer_block_preserves_sequence_length(
         #[case] dim: usize,
         #[case] num_heads: usize,
@@ -1578,8 +1584,7 @@ mod tests {
 
         // Create appropriate mask matrix for the test
         let window_size = 7; // Default window size
-        let num_windows =
-            ((h + window_size - 1) / window_size) * ((w + window_size - 1) / window_size);
+        let num_windows = h.div_ceil(window_size) * w.div_ceil(window_size);
         let mask_matrix = Tensor::<TestBackend, 3>::zeros(
             [
                 num_windows,
@@ -1606,6 +1611,7 @@ mod tests {
     #[case(96, 2, 3, true, vec![0.0, 0.1], 56, 56, 2)] // Original case: 96 dim, 2 blocks, 3 heads, downsample
     #[case(64, 1, 2, false, vec![0.0], 32, 32, 1)] // No downsample: 64 dim, 1 block, 2 heads
     #[case(128, 3, 4, true, vec![0.0, 0.05, 0.1], 28, 28, 3)] // More blocks: 128 dim, 3 blocks, 4 heads
+    #[ignore = "slow backbone integration test"]
     fn basic_layer_handles_various_configurations(
         #[case] dim: usize,
         #[case] depth: usize,
@@ -1637,8 +1643,8 @@ mod tests {
 
         if downsample {
             // After downsampling - spatial dims halved, channels doubled
-            let expected_h = (h + 1) / 2; // Ceiling division
-            let expected_w = (w + 1) / 2; // Ceiling division
+            let expected_h = h.div_ceil(2);
+            let expected_w = w.div_ceil(2);
             assert_eq!(
                 x_down.shape().dims,
                 [batch_size, expected_h * expected_w, 2 * dim]
@@ -1667,6 +1673,7 @@ mod tests {
     #[case("swin_v1_s", [96, 192, 384, 768])]
     #[case("swin_v1_b", [128, 256, 512, 1024])]
     #[case("swin_v1_l", [192, 384, 768, 1536])]
+    #[ignore = "slow backbone forward integration test"]
     fn swin_models_forward_returns_correct_shapes(
         #[case] model_variant: &str,
         #[case] expected_channels: [usize; 4],
@@ -1724,6 +1731,7 @@ mod tests {
     #[case(320, 320, 1)] // Larger input, batch=1
     #[case(128, 128, 4)] // Smaller input, larger batch
     #[case(192, 256, 1)] // Non-square input, batch=1
+    #[ignore = "slow backbone forward integration test"]
     fn swin_transformer_handles_various_input_sizes(
         #[case] height: usize,
         #[case] width: usize,

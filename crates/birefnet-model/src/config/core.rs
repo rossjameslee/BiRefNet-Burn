@@ -203,7 +203,7 @@ impl ModelConfig {
     pub fn lateral_channels_in_collection(&self) -> [usize; 4] {
         let channels = match self.backbone.backbone {
             Backbone::Vgg16 | Backbone::Vgg16bn => [512, 256, 128, 64],
-            Backbone::Resnet50 => [1024, 512, 256, 64],
+            Backbone::Resnet50 => [2048, 1024, 512, 256],
             Backbone::SwinV1T | Backbone::SwinV1S => [768, 384, 192, 96],
             Backbone::SwinV1B => [1024, 512, 256, 128],
             Backbone::SwinV1L => [1536, 768, 384, 192],
@@ -249,7 +249,7 @@ impl BackboneConfig {
     pub const fn lateral_channels_in_collection(&self) -> [usize; 4] {
         match self.backbone {
             Backbone::Vgg16 | Backbone::Vgg16bn => [512, 256, 128, 64],
-            Backbone::Resnet50 => [1024, 512, 256, 64],
+            Backbone::Resnet50 => [2048, 1024, 512, 256],
             Backbone::SwinV1T | Backbone::SwinV1S => [768, 384, 192, 96],
             Backbone::SwinV1B => [1024, 512, 256, 128],
             Backbone::SwinV1L => [1536, 768, 384, 192],

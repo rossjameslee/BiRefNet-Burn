@@ -250,7 +250,7 @@ impl SSIMLoss {
         ssim_map
             .reshape([batch_size as i32, -1])
             .mean_dim(1)
-            .squeeze::<1>()
+            .reshape([batch_size])
     }
 
     fn assertions<B: Backend>(&self, predictions: &Tensor<B, 4>, targets: &Tensor<B, 4>) {

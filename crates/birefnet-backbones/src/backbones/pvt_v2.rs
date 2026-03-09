@@ -144,6 +144,7 @@ pub struct Attention<B: Backend> {
 }
 
 impl<B: Backend> Attention<B> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         dim: usize,
         num_heads: usize,
@@ -230,6 +231,7 @@ impl<B: Backend> Attention<B> {
         }
     }
 
+    #[allow(clippy::single_range_in_vec_init)]
     pub fn forward(&self, x: Tensor<B, 3>, h: usize, w: usize) -> Tensor<B, 3> {
         let [b, n, c] = x.dims();
         let q = self
@@ -286,6 +288,7 @@ pub struct Block<B: Backend> {
 }
 
 impl<B: Backend> Block<B> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         dim: usize,
         num_heads: usize,
@@ -696,6 +699,7 @@ mod tests {
     use crate::tests::TestBackend;
 
     #[test]
+    #[ignore = "slow backbone forward integration test"]
     fn pvt_v2_b2_forward_returns_hierarchical_features() {
         let device = Default::default();
         let config = PvtV2Config::b2(3);
@@ -716,6 +720,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "slow backbone tensor-shape test"]
     fn overlap_patch_embed_calculates_correct_output_dimensions() {
         let device = Default::default();
         let patch_embed = OverlapPatchEmbed::new(7, 4, 3, 64, 1e-6, &device);

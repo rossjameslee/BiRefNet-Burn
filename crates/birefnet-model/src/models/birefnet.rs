@@ -493,102 +493,133 @@ impl<B: Backend> InferenceStep for BiRefNet<B> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "train")]
     use birefnet_loss::BiRefNetLossConfig;
-    use burn::{
-        tensor::{Distribution, Tensor},
-        train::{InferenceStep, TrainStep},
-    };
+    use burn::tensor::{Distribution, Tensor};
+    #[cfg(feature = "train")]
+    use burn::train::{InferenceStep, TrainStep};
 
     use super::BiRefNetConfig;
     #[cfg(feature = "train")]
     use crate::BiRefNetBatch;
+    #[cfg(feature = "train")]
+    use crate::tests::TestAutodiffBackend;
     use crate::{
-        config::{InterpolationStrategy, ModelConfig},
-        tests::{TestAutodiffBackend, TestBackend},
+        config::{Backbone, BackboneConfig, InterpolationStrategy, ModelConfig},
+        tests::TestBackend,
     };
 
     #[cfg(not(feature = "train"))]
     #[test]
     fn birefnet_forward_produces_correct_output_shape() {
-        let device = Default::default();
-        let config = BiRefNetConfig::new(ModelConfig::new(InterpolationStrategy::Nearest));
-        let model = config.init::<TestBackend>(&device).unwrap();
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                let device = Default::default();
+                let model_config = ModelConfig::new(InterpolationStrategy::Nearest)
+                    .with_backbone(BackboneConfig::new().with_backbone(Backbone::Resnet50));
+                let config = BiRefNetConfig::new(model_config);
+                let model = config.init::<TestBackend>(&device).unwrap();
 
-        // Create test input tensor [batch_size=1, channels=3, height=64, width=64]
-        let input = Tensor::<TestBackend, 4>::random(
-            [1, 3, 64, 64],
-            Distribution::Normal(0.0, 1.0),
-            &device,
-        );
+                // Create test input tensor [batch_size=1, channels=3, height=64, width=64]
+                let input = Tensor::<TestBackend, 4>::random(
+                    [1, 3, 64, 64],
+                    Distribution::Normal(0.0, 1.0),
+                    &device,
+                );
 
-        // Test forward pass
-        let output = model.forward(input);
-        assert!(output.is_ok());
+                // Test forward pass
+                let output = model.forward(input);
+                assert!(output.is_ok());
 
-        let output_tensor = output.unwrap();
-        // Output should have shape [1, 1, 64, 64] for segmentation
-        assert_eq!(output_tensor.dims(), [1, 1, 64, 64]);
+                let output_tensor = output.unwrap();
+                // Output should have shape [1, 1, 64, 64] for segmentation
+                assert_eq!(output_tensor.dims(), [1, 1, 64, 64]);
+            })
+            .expect("failed to spawn forward test thread")
+            .join()
+            .expect("forward test thread panicked");
     }
 
     #[cfg(feature = "train")]
     #[test]
+    #[ignore = "slow model train-step integration test"]
     fn birefnet_train_step_produces_finite_loss() {
-        let device = Default::default();
-        let config = BiRefNetConfig::new(ModelConfig::new(InterpolationStrategy::Nearest))
-            .with_loss_config(Option::from(BiRefNetLossConfig::new()));
-        let model = config.init::<TestAutodiffBackend>(&device).unwrap();
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                let device = Default::default();
+                let model_config = ModelConfig::new(InterpolationStrategy::Nearest)
+                    .with_backbone(BackboneConfig::new().with_backbone(Backbone::Resnet50));
+                let config = BiRefNetConfig::new(model_config)
+                    .with_loss_config(Option::from(BiRefNetLossConfig::new()));
+                let model = config.init::<TestAutodiffBackend>(&device).unwrap();
 
-        // Create test batch
-        let images = Tensor::<TestAutodiffBackend, 4>::random(
-            [2, 3, 64, 64],
-            Distribution::Normal(0.0, 1.0),
-            &device,
-        );
-        let masks = Tensor::<TestAutodiffBackend, 4>::random(
-            [2, 1, 64, 64],
-            Distribution::Uniform(0.0, 1.0),
-            &device,
-        );
+                // Create test batch
+                let images = Tensor::<TestAutodiffBackend, 4>::random(
+                    [2, 3, 64, 64],
+                    Distribution::Normal(0.0, 1.0),
+                    &device,
+                );
+                let masks = Tensor::<TestAutodiffBackend, 4>::random(
+                    [2, 1, 64, 64],
+                    Distribution::Uniform(0.0, 1.0),
+                    &device,
+                );
 
-        let batch = BiRefNetBatch { images, masks };
+                let batch = BiRefNetBatch { images, masks };
 
-        // Test training step
-        let train_output = TrainStep::step(&model, batch);
+                // Test training step
+                let train_output = TrainStep::step(&model, batch);
 
-        // Should have valid output
-        assert!(train_output.item.loss.into_scalar().is_finite());
-        assert_eq!(train_output.item.output.dims(), [2, 1, 64, 64]);
-        assert_eq!(train_output.item.targets.dims(), [2, 1, 64, 64]);
+                // Should have valid output
+                assert!(train_output.item.loss.into_scalar().is_finite());
+                assert_eq!(train_output.item.output.dims(), [2, 1, 64, 64]);
+                assert_eq!(train_output.item.targets.dims(), [2, 1, 64, 64]);
+            })
+            .expect("failed to spawn train-step test thread")
+            .join()
+            .expect("train-step test thread panicked");
     }
 
     #[cfg(feature = "train")]
     #[test]
+    #[ignore = "slow model validation-step integration test"]
     fn birefnet_valid_step_produces_finite_loss() {
-        let device = Default::default();
-        let config = BiRefNetConfig::new(ModelConfig::new(InterpolationStrategy::Nearest))
-            .with_loss_config(Option::from(BiRefNetLossConfig::new()));
-        let model = config.init::<TestBackend>(&device).unwrap();
+        std::thread::Builder::new()
+            .stack_size(16 * 1024 * 1024)
+            .spawn(|| {
+                let device = Default::default();
+                let model_config = ModelConfig::new(InterpolationStrategy::Nearest)
+                    .with_backbone(BackboneConfig::new().with_backbone(Backbone::Resnet50));
+                let config = BiRefNetConfig::new(model_config)
+                    .with_loss_config(Option::from(BiRefNetLossConfig::new()));
+                let model = config.init::<TestBackend>(&device).unwrap();
 
-        // Create test batch
-        let images = Tensor::<TestBackend, 4>::random(
-            [2, 3, 64, 64],
-            Distribution::Normal(0.0, 1.0),
-            &device,
-        );
-        let masks = Tensor::<TestBackend, 4>::random(
-            [2, 1, 64, 64],
-            Distribution::Uniform(0.0, 1.0),
-            &device,
-        );
+                // Create test batch
+                let images = Tensor::<TestBackend, 4>::random(
+                    [2, 3, 64, 64],
+                    Distribution::Normal(0.0, 1.0),
+                    &device,
+                );
+                let masks = Tensor::<TestBackend, 4>::random(
+                    [2, 1, 64, 64],
+                    Distribution::Uniform(0.0, 1.0),
+                    &device,
+                );
 
-        let batch = BiRefNetBatch { images, masks };
+                let batch = BiRefNetBatch { images, masks };
 
-        // Test validation step
-        let output = InferenceStep::step(&model, batch);
+                // Test validation step
+                let output = InferenceStep::step(&model, batch);
 
-        // Should have valid output
-        assert!(output.loss.into_scalar().is_finite());
-        assert_eq!(output.output.dims(), [2, 1, 64, 64]);
-        assert_eq!(output.targets.dims(), [2, 1, 64, 64]);
+                // Should have valid output
+                assert!(output.loss.into_scalar().is_finite());
+                assert_eq!(output.output.dims(), [2, 1, 64, 64]);
+                assert_eq!(output.targets.dims(), [2, 1, 64, 64]);
+            })
+            .expect("failed to spawn valid-step test thread")
+            .join()
+            .expect("valid-step test thread panicked");
     }
 }

@@ -347,7 +347,8 @@ pub fn refine_foreground<B: Backend>(
     let refined_4d = refine_foreground_core(image_4d, mask_4d, radius);
 
     // Remove batch dimension
-    refined_4d.squeeze()
+    let [_, channels, height, width] = refined_4d.dims();
+    refined_4d.reshape([channels, height, width])
 }
 
 /// Refine foreground for batch inputs
@@ -533,13 +534,13 @@ mod tests {
 
         // Check edge replications
         // Top edge should replicate first row
-        assert!((values[0 * 5 + 2] - 1.0).abs() < 1e-6); // Top row, original [0,0]
-        assert!((values[0 * 5 + 3] - 2.0).abs() < 1e-6); // Top row, original [0,1]
+        assert!((values[2] - 1.0).abs() < 1e-6); // Top row, original [0,0]
+        assert!((values[3] - 2.0).abs() < 1e-6); // Top row, original [0,1]
 
         // Left edge should replicate first column
-        assert!((values[1 * 5 + 0] - 1.0).abs() < 1e-6); // Left col, replicated from [1,2]
-        assert!((values[1 * 5 + 1] - 1.0).abs() < 1e-6); // Left col, replicated from [1,2]
-        assert!((values[2 * 5 + 0] - 3.0).abs() < 1e-6); // Left col, replicated from [2,2]
+        assert!((values[5] - 1.0).abs() < 1e-6); // Left col, replicated from [1,2]
+        assert!((values[6] - 1.0).abs() < 1e-6); // Left col, replicated from [1,2]
+        assert!((values[10] - 3.0).abs() < 1e-6); // Left col, replicated from [2,2]
         assert!((values[2 * 5 + 1] - 3.0).abs() < 1e-6); // Left col, replicated from [2,2]
     }
 

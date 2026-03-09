@@ -23,5 +23,5 @@ birefnet-loss = { path = "../birefnet-loss", optional = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-burn = { workspace = true, features = ["cpu", "train"] }
+burn = { workspace = true, features = ["cpu", "ndarray", "train"] }
 birefnet-loss = { path = "../birefnet-loss" }

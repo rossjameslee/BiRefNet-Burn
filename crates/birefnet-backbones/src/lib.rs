@@ -8,7 +8,7 @@ mod backbones;
 #[doc(inline)]
 pub use backbones::{
     pvt_v2::{PvtV2Config, PyramidVisionTransformerImpr},
-    resnet::{ResNetBackbone, ResNetConfig},
+    resnet::{ResNetBackbone, ResNetConfig, ResNetError},
     swin_transformer::{SwinTransformer, SwinTransformerConfig},
     vgg::{VGGBackbone, VggConfig},
 };
@@ -149,6 +149,7 @@ pub enum PvtV2Variant {
 }
 
 /// Enum to wrap different backbone implementations
+#[allow(clippy::large_enum_variant)]
 #[derive(Module, Debug)]
 pub enum BackboneWrapper<B: Backend> {
     /// ResNet backbone
@@ -199,7 +200,7 @@ impl<B: Backend> Backbone<B> for BackboneWrapper<B> {
 ///
 /// # Panics
 /// * When Swin Transformer initialization fails due to invalid configuration parameters
-/// * When PvtV2 initialization fails due to invalid configuration parameters  
+/// * When PvtV2 initialization fails due to invalid configuration parameters
 /// * When the device is not compatible with the selected backend
 ///
 /// # Examples
